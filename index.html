@@ -1,0 +1,143 @@
+<!DOCTYPE html><html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendataan Pasien</title>
+    <style>
+        body { background: #ffa500; font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0; }
+        table { width: 100%; margin-top: 20px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        button { cursor: pointer; background: #ff6347; color: white; border: none; }
+        .edit-btn { background: #ffa500; }
+        .delete-btn { background: #dc143c; }
+        .share-btn { background: #008000; }
+        .upload-btn { background: #0000ff; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Pendataan Pasien</h2>
+        <input type="text" id="name" placeholder="Nama">
+        <input type="text" id="address" placeholder="Alamat">
+        <input type="text" id="phone" placeholder="HP / WhatsApp">
+        <select id="therapy">
+            <option value="Totok Punggung">Totok Punggung</option>
+            <option value="Bekam">Bekam</option>
+            <option value="Totok Punggung & Bekam">Totok Punggung & Bekam</option>
+        </select>
+        <button onclick="addPatient()">Tambah Pasien</button>
+        <button class="upload-btn" onclick="uploadContacts()">Unggah dari Kontak</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nama</th>
+                    <th>Alamat</th>
+                    <th>HP</th>
+                    <th>Terapi</th>
+                    <th>Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="patient-list"></tbody>
+        </table>
+        <button class="share-btn" onclick="shareData()">Bagikan</button>
+        <button onclick="downloadCSV()">Unduh CSV</button>
+    </div>
+    <script>
+        let patients = [];function addPatient() {
+        let name = document.getElementById("name").value;
+        let address = document.getElementById("address").value;
+        let phone = document.getElementById("phone").value;
+        let therapy = document.getElementById("therapy").value;
+        
+        let patient = { name, address, phone, therapy };
+        patients.push(patient);
+        displayPatients();
+        clearForm();
+    }
+
+    function displayPatients() {
+        let list = document.getElementById("patient-list");
+        list.innerHTML = "";
+        patients.forEach((p, index) => {
+            list.innerHTML += `<tr>
+                <td>${p.name}</td>
+                <td>${p.address}</td>
+                <td>${p.phone}</td>
+                <td>${p.therapy}</td>
+                <td>
+                    <button class='edit-btn' onclick='editPatient(${index})'>Edit</button>
+                    <button class='delete-btn' onclick='deletePatient(${index})'>Hapus</button>
+                </td>
+            </tr>`;
+        });
+    }
+
+    function editPatient(index) {
+        let p = patients[index];
+        document.getElementById("name").value = p.name;
+        document.getElementById("address").value = p.address;
+        document.getElementById("phone").value = p.phone;
+        document.getElementById("therapy").value = p.therapy;
+        patients.splice(index, 1);
+        displayPatients();
+    }
+
+    function deletePatient(index) {
+        patients.splice(index, 1);
+        displayPatients();
+    }
+
+    function clearForm() {
+        document.getElementById("name").value = "";
+        document.getElementById("address").value = "";
+        document.getElementById("phone").value = "";
+    }
+
+    function shareData() {
+        let text = patients.map(p => `${p.name}, ${p.address}, ${p.phone}, ${p.therapy}`).join("\n");
+        if (navigator.share) {
+            navigator.share({
+                title: "Data Pasien",
+                text: text
+            }).catch(err => console.log("Gagal berbagi", err));
+        } else {
+            alert("Fitur berbagi tidak didukung di perangkat ini.");
+        }
+    }
+
+    function downloadCSV() {
+        let csvContent = "data:text/csv;charset=utf-8,Nama,Alamat,HP,Terapi\n" +
+            patients.map(p => `${p.name},${p.address},${p.phone},${p.therapy}`).join("\n");
+        let encodedUri = encodeURI(csvContent);
+        let link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "data_pasien.csv");
+        document.body.appendChild(link);
+        link.click();
+    }
+
+    async function uploadContacts() {
+        if (!('contacts' in navigator) || !('select' in navigator.contacts)) {
+            alert("Browser Anda tidak mendukung akses kontak langsung.");
+            return;
+        }
+        try {
+            let contacts = await navigator.contacts.select(["name", "tel"], { multiple: true });
+            contacts.forEach(contact => {
+                let name = contact.name ? contact.name[0] : "";
+                let phone = contact.tel ? contact.tel[0] : "";
+                if (name && phone) {
+                    patients.push({ name, address: "", phone, therapy: "" });
+                }
+            });
+            displayPatients();
+        } catch (error) {
+            alert("Gagal mengakses kontak: " + error.message);
+        }
+    }
+</script>
+
+</body>
+</html>
