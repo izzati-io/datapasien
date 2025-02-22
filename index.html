@@ -7,8 +7,8 @@
         body { background: #ffa500; font-family: Arial, sans-serif; padding: 20px; }
         .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 10px; }
         input, select, button { width: 100%; padding: 10px; margin: 5px 0; }
-        table { width: 100%; margin-top: 20px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #ddd; }
+        table { width: 100%; margin-top: 20px; border-collapse: collapse; }
+        th, td { padding: 10px; text-align: left; border: 1px solid #ddd; }
         button { cursor: pointer; background: #ff6347; color: white; border: none; }
         .edit-btn { background: #ffa500; }
         .delete-btn { background: #dc143c; }
@@ -45,16 +45,26 @@
         <button onclick="downloadCSV()">Unduh CSV</button>
     </div>
     <script>
-        let patients = [];function addPatient() {
+        let patients = JSON.parse(localStorage.getItem("patients")) || [];
+        displayPatients();function saveToLocalStorage() {
+        localStorage.setItem("patients", JSON.stringify(patients));
+    }
+
+    function addPatient() {
         let name = document.getElementById("name").value;
         let address = document.getElementById("address").value;
         let phone = document.getElementById("phone").value;
         let therapy = document.getElementById("therapy").value;
-        
-        let patient = { name, address, phone, therapy };
-        patients.push(patient);
-        displayPatients();
-        clearForm();
+
+        if (name && phone) {
+            let patient = { name, address, phone, therapy };
+            patients.push(patient);
+            saveToLocalStorage();
+            displayPatients();
+            clearForm();
+        } else {
+            alert("Nama dan HP harus diisi!");
+        }
     }
 
     function displayPatients() {
@@ -80,12 +90,12 @@
         document.getElementById("address").value = p.address;
         document.getElementById("phone").value = p.phone;
         document.getElementById("therapy").value = p.therapy;
-        patients.splice(index, 1);
-        displayPatients();
+        deletePatient(index);
     }
 
     function deletePatient(index) {
         patients.splice(index, 1);
+        saveToLocalStorage();
         displayPatients();
     }
 
@@ -132,6 +142,7 @@
                     patients.push({ name, address: "", phone, therapy: "" });
                 }
             });
+            saveToLocalStorage();
             displayPatients();
         } catch (error) {
             alert("Gagal mengakses kontak: " + error.message);
